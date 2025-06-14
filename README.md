@@ -1,3 +1,14 @@
+Para Comenzar 
+
+npm install
+npm run dev
+
+http//:localhost/3000
+
+para la base de datos
+http//:localhost/8080
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
