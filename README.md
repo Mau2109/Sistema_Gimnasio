@@ -1,7 +1,8 @@
 Para Comenzar 
 
-npm install
-npm run dev
+docker compose up -d.
+npm install.
+npm run dev.
 
 http//:localhost/3000
 
