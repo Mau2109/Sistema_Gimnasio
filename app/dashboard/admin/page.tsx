@@ -8,40 +8,60 @@ import { Button } from "@/components/ui/button"
 export default function AdminDashboard() {
   const [usuario, setUsuario] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({
+    totalMiembros: 0,
+    totalEntrenadores: 0,
+    clasesHoy: 0,
+    ingresosMes: 0,
+  })
   const router = useRouter()
 
   useEffect(() => {
-    console.log("Verificando autenticación en admin dashboard...")
-
     const userData = localStorage.getItem("usuario")
-    console.log("Datos del usuario en localStorage:", userData)
-
     if (!userData) {
-      console.log("No hay datos de usuario, redirigiendo a login")
       router.push("/login")
       return
     }
 
     try {
       const user = JSON.parse(userData)
-      console.log("Usuario parseado:", user)
-
       if (user.tipo !== "administrador") {
-        console.log("Usuario no es administrador, redirigiendo a login")
         router.push("/login")
         return
       }
-
       setUsuario(user)
+      loadStats()
       setLoading(false)
     } catch (error) {
-      console.error("Error parseando datos de usuario:", error)
       router.push("/login")
     }
   }, [router])
 
+  const loadStats = async () => {
+    try {
+      // Cargar estadísticas desde las APIs
+      const [miembrosRes, entrenadoresRes, horariosRes] = await Promise.all([
+        fetch("/api/usuarios?tipo=miembro"),
+        fetch("/api/entrenadores"),
+        fetch("/api/horarios?fecha=" + new Date().toISOString().split("T")[0]),
+      ])
+
+      const miembros = await miembrosRes.json()
+      const entrenadores = await entrenadoresRes.json()
+      const horarios = await horariosRes.json()
+
+      setStats({
+        totalMiembros: miembros.success ? miembros.data.length : 0,
+        totalEntrenadores: entrenadores.success ? entrenadores.data.length : 0,
+        clasesHoy: horarios.success ? horarios.data.length : 0,
+        ingresosMes: 15750, // Esto vendría de la API de pagos
+      })
+    } catch (error) {
+      console.error("Error cargando estadísticas:", error)
+    }
+  }
+
   const handleLogout = () => {
-    console.log("Cerrando sesión...")
     localStorage.removeItem("usuario")
     router.push("/login")
   }
@@ -57,9 +77,7 @@ export default function AdminDashboard() {
     )
   }
 
-  if (!usuario) {
-    return null
-  }
+  if (!usuario) return null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,7 +92,6 @@ export default function AdminDashboard() {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
                 <p className="text-sm text-gray-600">Bienvenido, {usuario.nombre}</p>
-                <p className="text-xs text-gray-500">Tipo: {usuario.tipo}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -90,16 +107,6 @@ export default function AdminDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Mensaje de bienvenida */}
-        <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <span className="text-green-600">✅</span>
-            <p className="text-green-800 font-medium">
-              ¡Bienvenido al panel de administración! Has iniciado sesión correctamente.
-            </p>
-          </div>
-        </div>
-
         {/* Estadísticas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
@@ -107,7 +114,7 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100">Total Miembros</p>
-                  <p className="text-3xl font-bold">245</p>
+                  <p className="text-3xl font-bold">{stats.totalMiembros}</p>
                 </div>
                 <span className="text-4xl">👥</span>
               </div>
@@ -118,10 +125,10 @@ export default function AdminDashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100">Clases Hoy</p>
-                  <p className="text-3xl font-bold">12</p>
+                  <p className="text-green-100">Entrenadores</p>
+                  <p className="text-3xl font-bold">{stats.totalEntrenadores}</p>
                 </div>
-                <span className="text-4xl">📅</span>
+                <span className="text-4xl">🏃‍♂️</span>
               </div>
             </CardContent>
           </Card>
@@ -130,10 +137,10 @@ export default function AdminDashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-purple-100">Ingresos del Mes</p>
-                  <p className="text-3xl font-bold">$15,750</p>
+                  <p className="text-purple-100">Clases Hoy</p>
+                  <p className="text-3xl font-bold">{stats.clasesHoy}</p>
                 </div>
-                <span className="text-4xl">💰</span>
+                <span className="text-4xl">📅</span>
               </div>
             </CardContent>
           </Card>
@@ -142,10 +149,10 @@ export default function AdminDashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-orange-100">Crecimiento</p>
-                  <p className="text-3xl font-bold">+8.5%</p>
+                  <p className="text-orange-100">Ingresos del Mes</p>
+                  <p className="text-3xl font-bold">${stats.ingresosMes}</p>
                 </div>
-                <span className="text-4xl">📈</span>
+                <span className="text-4xl">💰</span>
               </div>
             </CardContent>
           </Card>
@@ -155,26 +162,41 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Acciones Rápidas</CardTitle>
-              <CardDescription>Acceso directo a funciones principales</CardDescription>
+              <CardTitle>Gestión de Usuarios</CardTitle>
+              <CardDescription>Administra miembros, entrenadores y personal</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <Button className="h-20 flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700">
+                <Button
+                  className="h-20 flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700"
+                  onClick={() => router.push("/dashboard/admin/registrar-miembro")}
+                >
                   <span className="text-2xl mb-2">👤</span>
                   Nuevo Miembro
                 </Button>
-                <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-                  <span className="text-2xl mb-2">📅</span>
-                  Nueva Clase
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center"
+                  onClick={() => router.push("/dashboard/admin/registrar-entrenador")}
+                >
+                  <span className="text-2xl mb-2">🏃‍♂️</span>
+                  Nuevo Entrenador
                 </Button>
-                <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-                  <span className="text-2xl mb-2">📊</span>
-                  Ver Reportes
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center"
+                  onClick={() => router.push("/dashboard/admin/gestionar-usuarios")}
+                >
+                  <span className="text-2xl mb-2">👥</span>
+                  Ver Usuarios
                 </Button>
-                <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-                  <span className="text-2xl mb-2">⚙️</span>
-                  Configuración
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center"
+                  onClick={() => router.push("/dashboard/admin/asignaciones")}
+                >
+                  <span className="text-2xl mb-2">🔗</span>
+                  Asignaciones
                 </Button>
               </div>
             </CardContent>
@@ -182,32 +204,43 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Actividad Reciente</CardTitle>
-              <CardDescription>Últimas actividades en el sistema</CardDescription>
+              <CardTitle>Gestión de Clases</CardTitle>
+              <CardDescription>Administra clases, horarios y programación</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                  <span className="text-green-600">✅</span>
-                  <div>
-                    <p className="text-sm font-medium">Ana García se registró</p>
-                    <p className="text-xs text-gray-500">hace 2 horas</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                  <span className="text-blue-600">💳</span>
-                  <div>
-                    <p className="text-sm font-medium">Pago de membresía - Carlos López</p>
-                    <p className="text-xs text-gray-500">hace 4 horas</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-                  <span className="text-purple-600">🏋️</span>
-                  <div>
-                    <p className="text-sm font-medium">Clase de Yoga completada</p>
-                    <p className="text-xs text-gray-500">hace 6 horas</p>
-                  </div>
-                </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center"
+                  onClick={() => router.push("/dashboard/admin/nueva-clase")}
+                >
+                  <span className="text-2xl mb-2">📅</span>
+                  Nueva Clase
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center"
+                  onClick={() => router.push("/dashboard/admin/horarios")}
+                >
+                  <span className="text-2xl mb-2">⏰</span>
+                  Horarios
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center"
+                  onClick={() => router.push("/dashboard/admin/reportes")}
+                >
+                  <span className="text-2xl mb-2">📊</span>
+                  Reportes
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center"
+                  onClick={() => router.push("/dashboard/admin/configuracion")}
+                >
+                  <span className="text-2xl mb-2">⚙️</span>
+                  Configuración
+                </Button>
               </div>
             </CardContent>
           </Card>

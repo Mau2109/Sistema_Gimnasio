@@ -116,7 +116,7 @@ export default function LoginPage() {
               <span className="text-2xl">🏋️</span>
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold text-gray-900">GymManager Pro</CardTitle>
+          <CardTitle className="text-3xl font-bold text-gray-900">GYM-UTEMITAS-XD</CardTitle>
           <CardDescription className="text-lg">Sistema de gestión integral para gimnasios</CardDescription>
         </CardHeader>
         <CardContent>

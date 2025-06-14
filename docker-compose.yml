@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: gym_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: gym_root_password
+      MYSQL_DATABASE: gym_management
+      MYSQL_USER: gym_user
+      MYSQL_PASSWORD: gym_password
+    ports:
+      - "3307:3306"  # Puerto externo:interno
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - gym_network
+    command: --default-authentication-plugin=mysql_native_password
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: gym_phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: gym_user
+      PMA_PASSWORD: gym_password
+      MYSQL_ROOT_PASSWORD: gym_root_password
+    ports:
+      - "8080:80"  # Acceso en http://localhost:8080
+    depends_on:
+      - mysql
+    networks:
+      - gym_network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  gym_network:
+    driver: bridge
