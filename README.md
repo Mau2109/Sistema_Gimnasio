@@ -1,9 +1,13 @@
 Para Comenzar 
 
-docker compose up -d.
-npm install.
-npm run dev.
+```bash
+docker compose up -d
 
+npm install
+
+npm run dev
+
+```
 http//:localhost/3000
 
 para la base de datos
